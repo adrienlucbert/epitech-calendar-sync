@@ -1,0 +1,15 @@
+{
+    "name": "Epitech Calendar Sync",
+    "version": "1.0",
+    "description": "Synchronize multiple Epitech intranet calendars with Outlook Calendar",
+    "manifest_version": 2,
+    "permissions": [
+        "https://intra.epitech.eu/*",
+        "storage",
+        "tabs"
+    ],
+    "browser_action": {
+        "default_title": "Epitech Calendar Sync",
+        "default_popup": "dist/index.html"
+    }
+}
