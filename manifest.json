@@ -6,7 +6,8 @@
     "permissions": [
         "https://intra.epitech.eu/*",
         "storage",
-        "tabs"
+        "tabs",
+        "identity"
     ],
     "browser_action": {
         "default_title": "Epitech Calendar Sync",

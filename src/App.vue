@@ -13,7 +13,7 @@
                 <tbody>
                     <tr>
                         <td>
-                            <button v-if="intra.accounts.length > 0 && outlook.accounts.length > 0"
+                            <button v-if="intra.accounts.length > 0 && outlook.account"
                                 class="fullwidth button small warning">Synchronize calendars</button>
                             <button v-else disabled title="Please link accounts to synchronize"
                                 class="fullwidth button small warning disabled">Synchronize calendars</button>
@@ -38,11 +38,11 @@
                 <tbody>
                     <tr v-for="account in intra.accounts" :key="account.id">
                         <td>{{ account.login.substr(0, account.login.indexOf('@')) }}</td>
-                        <td><button class="fullwidth button small danger">Remove</button></td>
+                        <td><button class="fullwidth button small danger" @click="intraDisconnect(account.login)">Remove</button></td>
                     </tr>
                     <tr>
-                        <td><input type="text" placeholder="enter an autologin..."/></td>
-                        <td><button class="fullwidth button small primary">Link</button></td>
+                        <td><input type="text" placeholder="enter an autologin..." ref="autologinInput"/></td>
+                        <td><button class="fullwidth button small primary" @click="intraConnect">Link</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -54,12 +54,13 @@
             </p>
             <table>
                 <tbody>
-                    <tr v-if="outlook.accounts.length > 0" :key="account.id">
-                        <td>{{ outlook.accounts[0].login.substr(0, outlook.accounts[0].login.indexOf('@')) }}</td>
-                        <td><button class="fullwidth button small danger">Remove</button></td>
+                    <tr v-if="outlook.account">
+                        <!-- <td>{{ outlook.account.login.substr(0, outlook.account.login.indexOf('@')) }}</td> -->
+                        <td>outlook account</td>
+                        <td><button class="fullwidth button small danger" @click="outlookDisconnect">Remove</button></td>
                     </tr>
                     <tr v-else>
-                        <td><button class="fullwidth button small primary">Connect with Office365</button></td>
+                        <td><button class="fullwidth button small primary" @click="outlookConnect">Connect with Office365</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -68,6 +69,10 @@
 </template>
 
 <script>
+import IntraAuth from '@app/auth/intra'
+import OutlookAuth from '@app/auth/outlook'
+import IntraConn from '@app/conn/intra'
+import OutlookConn from '@app/conn/outlook'
 import ChromeLink from '@components/chrome-link'
 
 export default {
@@ -75,15 +80,75 @@ export default {
     components: {
         ChromeLink
     },
-    data: () => {
+    data() {
         return {
             intra: {
                 accounts: []
             },
             outlook: {
-                accounts: []
+                account: null
             }
         }
+    },
+    methods: {
+        /**
+         * Add entry in intranet accounts list
+         */
+        intraConnect() {
+            // TODO: FIX: Connect taken into account 1 time out of 2...??!
+
+            const autologinInput = this.$refs['autologinInput']
+
+            const autologin = autologinInput.value
+            autologinInput.value = ''
+            IntraAuth.connect(autologin)
+                .then(() => this.intraUpdate())
+        },
+        /**
+         * Remove entry from intranet accounts list
+         * 
+         * @param {String} login login (email) of the account to remove
+         */
+        intraDisconnect(login) {
+            IntraAuth.disconnect(login)
+                .then(() => this.intraUpdate())
+        },
+        /**
+         * Update intranet accounts list
+         */
+        intraUpdate() {
+            IntraAuth.getTokens()
+                .then(res => {
+                    this.intra.accounts = res
+                })
+        },
+        /**
+         * Connect to Office365
+         */
+        outlookConnect() {
+            OutlookAuth.connect()
+                .then(() => this.outlookUpdate())
+        },
+        /**
+         * Disconnect Office365 account
+         */
+        outlookDisconnect() {
+            OutlookAuth.disconnect()
+                .then(() => this.outlookUpdate())
+        },
+        /**
+         * Update intranet accounts list
+         */
+        outlookUpdate() {
+            OutlookAuth.getToken(false)
+                .then(res => {
+                    this.outlook.account = res
+                })
+        }
+    },
+    mounted() {
+        this.intraUpdate()
+        this.outlookUpdate()
     }
 }
 </script>
