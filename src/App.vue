@@ -9,18 +9,13 @@
             <p class="block">
                 Synchronize your Outlook Calendar with all linked Epitech intranet calendars.
             </p>
-            <table class="fullwidth">
-                <tbody>
-                    <tr>
-                        <td>
-                            <button v-if="intra.accounts.length > 0 && outlook.account"
-                                class="fullwidth button small warning">Synchronize calendars</button>
-                            <button v-else disabled title="Please link accounts to synchronize"
-                                class="fullwidth button small warning disabled">Synchronize calendars</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <button v-if="intra.accounts.length > 0 && outlook.account"
+                class="button small warning" @click="synchronize">Synchronize calendars</button>
+            <button v-else disabled title="Please link accounts to synchronize"
+                class="button small warning disabled">Synchronize calendars</button>
+            <img v-if="isSynchronizing"
+                style="height:1.5em;vertical-align:middle" :src="loaderImage" alt="loading..."/>
+            <p v-if="resultStr" class="small" style="margin-top:.5em">{{ resultStr }}</p>
         </section>
         <section class="block">
             <h2>Epitech intranet</h2>
@@ -55,8 +50,7 @@
             <table>
                 <tbody>
                     <tr v-if="outlook.account">
-                        <!-- <td>{{ outlook.account.login.substr(0, outlook.account.login.indexOf('@')) }}</td> -->
-                        <td>outlook account</td>
+                        <td>Account linked</td>
                         <td><button class="fullwidth button small danger" @click="outlookDisconnect">Remove</button></td>
                     </tr>
                     <tr v-else>
@@ -73,7 +67,9 @@ import IntraAuth from '@app/auth/intra'
 import OutlookAuth from '@app/auth/outlook'
 import IntraConn from '@app/conn/intra'
 import OutlookConn from '@app/conn/outlook'
+import synchronize from '@app/sync/sync'
 import ChromeLink from '@components/chrome-link'
+import loaderImage from '@assets/loader.svg'
 
 export default {
     name: 'App',
@@ -87,19 +83,39 @@ export default {
             },
             outlook: {
                 account: null
-            }
+            },
+            loaderImage: loaderImage,
+            isSynchronizing: false,
+            resultStr: null,
+            resultType: null
         }
     },
     methods: {
         /**
+         * Synchronize calendars (mirror intranets to Outlook)
+         */
+        synchronize() {
+            this.isSynchronizing = true
+            synchronize()
+                .then(res => {
+                    this.resultType = 'primary'
+                    this.resultStr = 'Sync successful'
+                    this.isSynchronizing = false
+                })
+                .catch(err => {
+                    console.error(err)
+                    this.resultType = 'warning'
+                    this.resultStr = 'Sync failed'
+                    this.isSynchronizing = false
+                })
+        },
+        /**
          * Add entry in intranet accounts list
          */
         intraConnect() {
-            // TODO: FIX: Connect taken into account 1 time out of 2...??!
-
             const autologinInput = this.$refs['autologinInput']
-
             const autologin = autologinInput.value
+
             autologinInput.value = ''
             IntraAuth.connect(autologin)
                 .then(() => this.intraUpdate())
@@ -140,7 +156,7 @@ export default {
          * Update intranet accounts list
          */
         outlookUpdate() {
-            OutlookAuth.getToken(false)
+            OutlookAuth.getToken()
                 .then(res => {
                     this.outlook.account = res
                 })

@@ -11,6 +11,6 @@
     ],
     "browser_action": {
         "default_title": "Epitech Calendar Sync",
-        "default_popup": "dist/index.html"
+        "default_popup": "index.html"
     }
 }

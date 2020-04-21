@@ -2,6 +2,7 @@ const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const VueLoaderPlugin = require('vue-loader/lib/plugin')
 const isProduction = process.env.NODE_ENV === 'production'
+const CopyPlugin = require('copy-webpack-plugin')
 
 module.exports = {
     mode: isProduction ? 'production' : 'development',
@@ -22,6 +23,10 @@ module.exports = {
             {
                 test: /\.vue$/,
                 use: [ 'vue-loader' ]
+            },
+            {
+                test: /\.(png|svg|jpg|gif)$/,
+                use: [ 'file-loader' ]
             }
         ]
     },
@@ -29,12 +34,16 @@ module.exports = {
         new HtmlWebpackPlugin({
             template: './src/templates/index.html'
         }),
-        new VueLoaderPlugin()
+        new VueLoaderPlugin(),
+        new CopyPlugin([
+            { from: 'src/manifest.json', to: 'manifest.json' }
+        ])
     ],
     resolve: {
         alias: {
             '@app': path.resolve(__dirname, 'src/app'),
             '@css': path.resolve(__dirname, 'src/css'),
+            '@assets': path.resolve(__dirname, 'src/assets'),
             '@components': path.resolve(__dirname, 'src/components'),
         },
         extensions: [ '*', '.js', '.vue', '.json' ]

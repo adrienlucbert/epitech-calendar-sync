@@ -1,5 +1,5 @@
-import Time from '@app/utils/time'
-import config from '@app/config'
+import { getTimestamp } from '@app/utils/time'
+import { outlookConfig } from '@app/config'
 
 /**
  * Outlook authenticator
@@ -13,15 +13,14 @@ class OutlookAuth
      * @param {Boolean} fetchIfNecessary if token cannot be retrieved from cloud 
      * storage, it will be fetched from Office365
      */
-    static getToken(fetchIfNecessary = true) {
+    static getToken(fetchIfNecessary = false) {
         /**
          * Build an URL
          */
         const getURL = () => {
-            const outlookConfig = config.outlookAPI()
-
+            const conf = outlookConfig()
             // Build URL from parameters
-            const url = outlookConfig.base + '?' + Object.entries(outlookConfig.params)
+            const url = conf.base + '?' + Object.entries(conf.params)
                 .map(entry => {
                     return (entry[0] + '=' + entry[1])
                 })
@@ -59,7 +58,7 @@ class OutlookAuth
                     reject(chrome.runtime.lastError)
                 }
                 const tokenData = result['outlookToken']
-                const isValid = (tokenData !== undefined && tokenData.end > Time.getTimestamp())
+                const isValid = (tokenData !== undefined && tokenData.end > getTimestamp())
                 if (isValid) {
                     resolve(tokenData)
                 } else {
@@ -82,7 +81,7 @@ class OutlookAuth
             const webAuthCallback = (callbackURL) => {
                 const queryData = extractQueryParams(callbackURL)
                 const tokenData = {
-                    end: Time.getTimestamp(queryData.params['expires_in']),
+                    end: getTimestamp(queryData.params['expires_in']),
                     token: queryData.params['access_token']
                 }
                 chrome.storage.sync.set({ 'outlookToken': tokenData }, () => {
